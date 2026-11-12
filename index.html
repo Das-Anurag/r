@@ -104,7 +104,7 @@
 <button onclick="generateInputs()">Generate Alpha Inputs</button>
 
 <p class="note">
-Enter the values of α₁, α₂, ..., αₙ.
+Enter the values of α(1), α(2), ..., α(n).
 The values will be sorted in ascending order automatically.
 </p>
 
@@ -176,31 +176,12 @@ function calculate() {
     // Sort alpha values in ascending order
     alpha.sort((a, b) => a - b);
 
-    // Generate all permutations
+    // Generate permutations in lexicographic order
     let permutations = [];
 
     function permute(arr, start) {
         if (start === arr.length) {
-            let sum = 0;
-            let expression = [];
-
-            for (let c = 0; c < n; c++) {
-                let coefficient = c + 1;
-                let value = alpha[arr[c]];
-
-                sum += coefficient * value;
-
-                expression.push(
-                    `${coefficient}α(${arr[c] + 1})`
-                );
-            }
-
-            permutations.push({
-                permutation: [...arr],
-                expression: expression.join(" + "),
-                value: sum
-            });
-
+            permutations.push([...arr]);
             return;
         }
 
@@ -215,20 +196,13 @@ function calculate() {
 
     permute([...Array(n).keys()], 0);
 
-    // IMPORTANT: Sort all arrangements by calculated value
-    // in ascending numerical order
+    // Sort permutations in the exact original order
     permutations.sort((a, b) => {
-        if (a.value !== b.value) {
-            return a.value - b.value;
-        }
-
-        // If values are equal, sort lexicographically
         for (let i = 0; i < n; i++) {
-            if (a.permutation[i] !== b.permutation[i]) {
-                return a.permutation[i] - b.permutation[i];
+            if (a[i] !== b[i]) {
+                return a[i] - b[i];
             }
         }
-
         return 0;
     });
 
@@ -239,12 +213,10 @@ function calculate() {
         ${alpha.map((v, i) => `α(${i + 1}) = ${v}`).join(", ")}
         </p>
 
-        <p><b>Arrangements are sorted by calculated value in ascending order.</b></p>
-
         <table>
             <thead>
                 <tr>
-                    <th>Rank</th>
+                    <th>No.</th>
                     <th>Permutation</th>
                     <th>Expression</th>
                     <th>Calculated Value</th>
@@ -253,13 +225,31 @@ function calculate() {
             <tbody>
     `;
 
-    permutations.forEach((item, index) => {
+    permutations.forEach((p, index) => {
+        let expression = [];
+        let sum = 0;
+
+        for (let c = 0; c < n; c++) {
+            let coefficient = c + 1;
+            let value = alpha[p[c]];
+
+            sum += coefficient * value;
+
+            if (coefficient === 1) {
+                expression.push(`α(${p[c] + 1})`);
+            } else {
+                expression.push(`${coefficient}α(${p[c] + 1})`);
+            }
+        }
+
         html += `
             <tr>
                 <td>A(${index + 1})</td>
-                <td>${item.permutation.map(x => x + 1).join(", ")}</td>
-                <td class="expression">${item.expression}</td>
-                <td>${item.value}</td>
+                <td>${p.map(x => x + 1).join("")}</td>
+                <td class="expression">
+                    ${expression.join(" + ")}
+                </td>
+                <td>${sum}</td>
             </tr>
         `;
     });
