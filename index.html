@@ -15,7 +15,7 @@
     }
 
     .container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: auto;
         background: white;
         padding: 20px;
@@ -67,7 +67,7 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
-        min-width: 500px;
+        min-width: 600px;
     }
 
     th, td {
@@ -176,7 +176,7 @@ function calculate() {
     // Sort alpha values in ascending order
     alpha.sort((a, b) => a - b);
 
-    // Generate permutations in lexicographic order
+    // Generate permutations
     let permutations = [];
 
     function permute(arr, start) {
@@ -196,7 +196,7 @@ function calculate() {
 
     permute([...Array(n).keys()], 0);
 
-    // Sort permutations in the exact original order
+    // Preserve the exact original lexicographic order
     permutations.sort((a, b) => {
         for (let i = 0; i < n; i++) {
             if (a[i] !== b[i]) {
@@ -219,7 +219,8 @@ function calculate() {
                     <th>No.</th>
                     <th>Permutation</th>
                     <th>Expression</th>
-                    <th>Calculated Value</th>
+                    <th>Calculated Value A(r)</th>
+                    <th>Remainder A(r) ÷ n</th>
                 </tr>
             </thead>
             <tbody>
@@ -242,6 +243,9 @@ function calculate() {
             }
         }
 
+        // Calculate the non-negative remainder
+        let remainder = ((sum % n) + n) % n;
+
         html += `
             <tr>
                 <td>A(${index + 1})</td>
@@ -250,6 +254,7 @@ function calculate() {
                     ${expression.join(" + ")}
                 </td>
                 <td>${sum}</td>
+                <td>${remainder}</td>
             </tr>
         `;
     });
