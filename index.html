@@ -238,7 +238,7 @@ function calculate() {
             <tbody>
     `;
 
-    // Initialize complex sum
+    // Initialize complex summation
     let realSum = 0;
     let imaginarySum = 0;
 
@@ -262,7 +262,8 @@ function calculate() {
         // Calculate non-negative remainder
         let remainder = ((sum % n) + n) % n;
 
-        // Calculate e^(i 2π remainder / n)
+        // Calculate exponential:
+        // e^(i 2π remainder / n)
         let angle = (2 * Math.PI * remainder) / n;
 
         let realPart = Math.cos(angle);
@@ -289,17 +290,7 @@ function calculate() {
         </table>
     `;
 
-    // Calculate magnitude and phase
-    let magnitude = Math.sqrt(
-        realSum * realSum + imaginarySum * imaginarySum
-    );
-
-    let phase = Math.atan2(imaginarySum, realSum);
-
-    // Convert phase to degrees
-    let phaseDegrees = phase * 180 / Math.PI;
-
-    // Avoid displaying tiny numerical errors as zero
+    // Remove tiny floating-point errors
     function cleanNumber(value) {
         if (Math.abs(value) < 1e-10) {
             return 0;
@@ -309,8 +300,6 @@ function calculate() {
 
     realSum = cleanNumber(realSum);
     imaginarySum = cleanNumber(imaginarySum);
-    magnitude = cleanNumber(magnitude);
-    phaseDegrees = cleanNumber(phaseDegrees);
 
     // Display final complex summation
     html += `
@@ -337,16 +326,6 @@ function calculate() {
             ${realSum}
             ${imaginarySum >= 0 ? "+" : "-"}
             ${Math.abs(imaginarySum)}i
-            </p>
-
-            <p>
-            <b>Magnitude:</b>
-            |S<sub>n</sub>| = ${magnitude}
-            </p>
-
-            <p>
-            <b>Phase:</b>
-            θ = ${phaseDegrees}°
             </p>
 
         </div>
