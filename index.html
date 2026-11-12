@@ -89,6 +89,14 @@
         color: #555;
         font-size: 14px;
     }
+
+    .final-result {
+        margin-top: 25px;
+        padding: 15px;
+        background: #eef2ff;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
 </style>
 </head>
 
@@ -113,9 +121,10 @@ The values will be sorted in ascending order automatically.
 <br>
 
 <button onclick="calculate()">Generate All Arrangements</button>
-<button onclick="copyResults()">Copy Results</button>
 
 <div class="result" id="results"></div>
+
+<div class="final-result" id="finalResult"></div>
 
 </div>
 
@@ -126,6 +135,8 @@ function generateInputs() {
     const container = document.getElementById("alphaInputs");
 
     container.innerHTML = "";
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("finalResult").innerHTML = "";
 
     if (!Number.isInteger(n) || n < 1 || n > 9) {
         alert("Please enter n between 1 and 9.");
@@ -176,7 +187,7 @@ function calculate() {
     // Sort alpha values in ascending order
     alpha.sort((a, b) => a - b);
 
-    // Generate permutations
+    // Generate all permutations
     let permutations = [];
 
     function permute(arr, start) {
@@ -196,7 +207,7 @@ function calculate() {
 
     permute([...Array(n).keys()], 0);
 
-    // Preserve the exact original lexicographic order
+    // Preserve exact original lexicographic order
     permutations.sort((a, b) => {
         for (let i = 0; i < n; i++) {
             if (a[i] !== b[i]) {
@@ -226,6 +237,10 @@ function calculate() {
             <tbody>
     `;
 
+    // Variables for the final complex summation
+    let realSum = 0;
+    let imaginarySum = 0;
+
     permutations.forEach((p, index) => {
         let expression = [];
         let sum = 0;
@@ -243,8 +258,14 @@ function calculate() {
             }
         }
 
-        // Calculate the non-negative remainder
+        // Calculate non-negative remainder
         let remainder = ((sum % n) + n) % n;
+
+        // Calculate e^(i 2π remainder)
+        let angle = 2 * Math.PI * remainder;
+
+        realSum += Math.cos(angle);
+        imaginarySum += Math.sin(angle);
 
         html += `
             <tr>
@@ -265,19 +286,45 @@ function calculate() {
     `;
 
     document.getElementById("results").innerHTML = html;
-}
 
-function copyResults() {
-    const results = document.getElementById("results");
-
-    if (results.innerText.trim() === "") {
-        alert("Please generate results first.");
-        return;
+    // Remove floating point numerical errors
+    if (Math.abs(realSum - Math.round(realSum)) < 1e-8) {
+        realSum = Math.round(realSum);
     }
 
-    navigator.clipboard.writeText(results.innerText)
-        .then(() => alert("Results copied successfully!"))
-        .catch(() => alert("Copy failed. Please try again."));
+    if (Math.abs(imaginarySum) < 1e-8) {
+        imaginarySum = 0;
+    }
+
+    // Format complex result
+    let complexResult;
+
+    if (imaginarySum === 0) {
+        complexResult = `${realSum}`;
+    } else if (realSum === 0) {
+        complexResult = `${imaginarySum}i`;
+    } else {
+        complexResult =
+            `${realSum} ${imaginarySum >= 0 ? "+" : "-"} ${Math.abs(imaginarySum)}i`;
+    }
+
+    // Display final summation
+    document.getElementById("finalResult").innerHTML = `
+        <h3>Final Summation</h3>
+
+        <p>
+        <b>
+        S = Σ<sub>r=1</sub><sup>n!</sup>
+        e<sup>i2π remainder(A(r) ÷ n)</sup>
+        </b>
+        </p>
+
+        <p><b>Real Part:</b> ${realSum}</p>
+
+        <p><b>Imaginary Part:</b> ${imaginarySum}</p>
+
+        <h3>S = ${complexResult}</h3>
+    `;
 }
 
 // Generate default inputs for n = 4
