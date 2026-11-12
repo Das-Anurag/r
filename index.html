@@ -90,12 +90,16 @@
         font-size: 14px;
     }
 
-    .final-result {
+    .sum-box {
         margin-top: 25px;
         padding: 15px;
         background: #eef2ff;
         border-radius: 8px;
-        overflow-x: auto;
+        overflow-wrap: anywhere;
+    }
+
+    .sum-box h3 {
+        color: #1e3a8a;
     }
 </style>
 </head>
@@ -124,8 +128,6 @@ The values will be sorted in ascending order automatically.
 
 <div class="result" id="results"></div>
 
-<div class="final-result" id="finalResult"></div>
-
 </div>
 
 <script>
@@ -136,7 +138,6 @@ function generateInputs() {
 
     container.innerHTML = "";
     document.getElementById("results").innerHTML = "";
-    document.getElementById("finalResult").innerHTML = "";
 
     if (!Number.isInteger(n) || n < 1 || n > 9) {
         alert("Please enter n between 1 and 9.");
@@ -207,7 +208,7 @@ function calculate() {
 
     permute([...Array(n).keys()], 0);
 
-    // Preserve exact original lexicographic order
+    // Preserve original lexicographic permutation order
     permutations.sort((a, b) => {
         for (let i = 0; i < n; i++) {
             if (a[i] !== b[i]) {
@@ -237,7 +238,7 @@ function calculate() {
             <tbody>
     `;
 
-    // Variables for the final complex summation
+    // Initialize complex sum
     let realSum = 0;
     let imaginarySum = 0;
 
@@ -261,11 +262,14 @@ function calculate() {
         // Calculate non-negative remainder
         let remainder = ((sum % n) + n) % n;
 
-        // Calculate e^(i 2π remainder)
-        let angle = 2 * Math.PI * remainder;
+        // Calculate e^(i 2π remainder / n)
+        let angle = (2 * Math.PI * remainder) / n;
 
-        realSum += Math.cos(angle);
-        imaginarySum += Math.sin(angle);
+        let realPart = Math.cos(angle);
+        let imaginaryPart = Math.sin(angle);
+
+        realSum += realPart;
+        imaginarySum += imaginaryPart;
 
         html += `
             <tr>
@@ -285,46 +289,70 @@ function calculate() {
         </table>
     `;
 
-    document.getElementById("results").innerHTML = html;
+    // Calculate magnitude and phase
+    let magnitude = Math.sqrt(
+        realSum * realSum + imaginarySum * imaginarySum
+    );
 
-    // Remove floating point numerical errors
-    if (Math.abs(realSum - Math.round(realSum)) < 1e-8) {
-        realSum = Math.round(realSum);
+    let phase = Math.atan2(imaginarySum, realSum);
+
+    // Convert phase to degrees
+    let phaseDegrees = phase * 180 / Math.PI;
+
+    // Avoid displaying tiny numerical errors as zero
+    function cleanNumber(value) {
+        if (Math.abs(value) < 1e-10) {
+            return 0;
+        }
+        return Number(value.toFixed(10));
     }
 
-    if (Math.abs(imaginarySum) < 1e-8) {
-        imaginarySum = 0;
-    }
+    realSum = cleanNumber(realSum);
+    imaginarySum = cleanNumber(imaginarySum);
+    magnitude = cleanNumber(magnitude);
+    phaseDegrees = cleanNumber(phaseDegrees);
 
-    // Format complex result
-    let complexResult;
+    // Display final complex summation
+    html += `
+        <div class="sum-box">
 
-    if (imaginarySum === 0) {
-        complexResult = `${realSum}`;
-    } else if (realSum === 0) {
-        complexResult = `${imaginarySum}i`;
-    } else {
-        complexResult =
-            `${realSum} ${imaginarySum >= 0 ? "+" : "-"} ${Math.abs(imaginarySum)}i`;
-    }
+            <h3>Final Complex Summation</h3>
 
-    // Display final summation
-    document.getElementById("finalResult").innerHTML = `
-        <h3>Final Summation</h3>
+            <p>
+            <b>
+            S<sub>n</sub> =
+            Σ<sub>r=1</sub><sup>n!</sup>
+            e<sup>
+            i2π remainder(A(r) ÷ n)/n
+            </sup>
+            </b>
+            </p>
 
-        <p>
-        <b>
-        S = Σ<sub>r=1</sub><sup>n!</sup>
-        e<sup>i2π remainder(A(r) ÷ n)</sup>
-        </b>
-        </p>
+            <p>
+            <b>Rectangular Form:</b>
+            </p>
 
-        <p><b>Real Part:</b> ${realSum}</p>
+            <p>
+            S<sub>n</sub> =
+            ${realSum}
+            ${imaginarySum >= 0 ? "+" : "-"}
+            ${Math.abs(imaginarySum)}i
+            </p>
 
-        <p><b>Imaginary Part:</b> ${imaginarySum}</p>
+            <p>
+            <b>Magnitude:</b>
+            |S<sub>n</sub>| = ${magnitude}
+            </p>
 
-        <h3>S = ${complexResult}</h3>
+            <p>
+            <b>Phase:</b>
+            θ = ${phaseDegrees}°
+            </p>
+
+        </div>
     `;
+
+    document.getElementById("results").innerHTML = html;
 }
 
 // Generate default inputs for n = 4
