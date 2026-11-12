@@ -1,1 +1,271 @@
-<meta http-equiv="refresh" content="0;url=https://github.com/Das-Anurag/r/raw/refs/heads/main/a.pdf">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpha Permutation Calculator</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f4f6f9;
+        color: #222;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px #ccc;
+    }
+
+    h2 {
+        text-align: center;
+        color: #1e3a8a;
+    }
+
+    input {
+        padding: 8px;
+        margin: 5px;
+        width: 100px;
+        border: 1px solid #aaa;
+        border-radius: 5px;
+    }
+
+    button {
+        padding: 10px 15px;
+        margin: 5px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .alpha-input {
+        display: inline-block;
+        margin: 5px;
+        padding: 8px;
+        background: #eef2ff;
+        border-radius: 5px;
+    }
+
+    .result {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        min-width: 500px;
+    }
+
+    th, td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background: #dbeafe;
+    }
+
+    .expression {
+        text-align: left;
+        word-break: break-word;
+    }
+
+    .note {
+        color: #555;
+        font-size: 14px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Alpha Permutation Calculator</h2>
+
+<label><b>Enter n:</b></label>
+<input type="number" id="n" min="1" max="9" value="4">
+
+<button onclick="generateInputs()">Generate Alpha Inputs</button>
+
+<p class="note">
+Enter the values of α₁, α₂, ..., αₙ.
+The values will be sorted in ascending order automatically.
+</p>
+
+<div id="alphaInputs"></div>
+
+<br>
+
+<button onclick="calculate()">Generate All Arrangements</button>
+<button onclick="copyResults()">Copy Results</button>
+
+<div class="result" id="results"></div>
+
+</div>
+
+<script>
+
+function generateInputs() {
+    const n = parseInt(document.getElementById("n").value);
+    const container = document.getElementById("alphaInputs");
+
+    container.innerHTML = "";
+
+    if (!Number.isInteger(n) || n < 1 || n > 9) {
+        alert("Please enter n between 1 and 9.");
+        return;
+    }
+
+    for (let c = 1; c <= n; c++) {
+        const div = document.createElement("div");
+        div.className = "alpha-input";
+
+        div.innerHTML = `
+            <label>α(${c}) = </label>
+            <input type="number" step="any" id="alpha${c}" value="${c}">
+        `;
+
+        container.appendChild(div);
+    }
+}
+
+function calculate() {
+    const n = parseInt(document.getElementById("n").value);
+
+    if (!Number.isInteger(n) || n < 1 || n > 9) {
+        alert("Please enter n between 1 and 9.");
+        return;
+    }
+
+    let alpha = [];
+
+    for (let c = 1; c <= n; c++) {
+        const input = document.getElementById("alpha" + c);
+
+        if (!input || input.value === "") {
+            alert("Please enter all alpha values.");
+            return;
+        }
+
+        const value = Number(input.value);
+
+        if (!Number.isFinite(value)) {
+            alert("Invalid alpha value.");
+            return;
+        }
+
+        alpha.push(value);
+    }
+
+    // Sort alpha values in ascending order
+    alpha.sort((a, b) => a - b);
+
+    // Generate all permutations
+    let permutations = [];
+
+    function permute(arr, start) {
+        if (start === arr.length) {
+            permutations.push([...arr]);
+            return;
+        }
+
+        for (let i = start; i < arr.length; i++) {
+            [arr[start], arr[i]] = [arr[i], arr[start]];
+
+            permute(arr, start + 1);
+
+            [arr[start], arr[i]] = [arr[i], arr[start]];
+        }
+    }
+
+    permute([...Array(n).keys()], 0);
+
+    let html = `
+        <h3>Total Arrangements: ${permutations.length} (${n}!)</h3>
+
+        <p><b>Sorted Alpha Values:</b>
+        ${alpha.map((v, i) => `α(${i + 1}) = ${v}`).join(", ")}
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Permutation</th>
+                    <th>Expression</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    permutations.forEach((p, index) => {
+        let expression = [];
+        let sum = 0;
+
+        for (let c = 0; c < n; c++) {
+            let coefficient = c + 1;
+            let value = alpha[p[c]];
+
+            sum += coefficient * value;
+
+            expression.push(
+                `${coefficient}α(${p[c] + 1})`
+            );
+        }
+
+        html += `
+            <tr>
+                <td>A(${index + 1})</td>
+                <td>${p.map(x => x + 1).join(", ")}</td>
+                <td class="expression">
+                    ${expression.join(" + ")}
+                </td>
+                <td>${sum}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById("results").innerHTML = html;
+}
+
+function copyResults() {
+    const results = document.getElementById("results");
+
+    if (results.innerText.trim() === "") {
+        alert("Please generate results first.");
+        return;
+    }
+
+    navigator.clipboard.writeText(results.innerText)
+        .then(() => alert("Results copied successfully!"))
+        .catch(() => alert("Copy failed. Please try again."));
+}
+
+// Generate default inputs for n = 4
+generateInputs();
+
+</script>
+
+</body>
+</html>
