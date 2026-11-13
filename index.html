@@ -4,7 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alpha Permutation Calculator</title>
+
+<title>Alpha Circular Permutation Calculator</title>
 
 <style>
     body {
@@ -15,7 +16,7 @@
     }
 
     .container {
-        max-width: 1000px;
+        max-width: 1100px;
         margin: auto;
         background: white;
         padding: 20px;
@@ -63,11 +64,16 @@
         overflow-x: auto;
     }
 
+    .table-container {
+        margin-top: 25px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 10px;
-        min-width: 600px;
+        min-width: 650px;
     }
 
     th, td {
@@ -78,6 +84,12 @@
 
     th {
         background: #dbeafe;
+    }
+
+    .table-title {
+        color: #1e3a8a;
+        font-weight: bold;
+        margin-bottom: 8px;
     }
 
     .expression {
@@ -108,23 +120,29 @@
 
 <div class="container">
 
-<h2>Alpha Permutation Calculator</h2>
+<h2>Alpha Circular Permutation Calculator</h2>
 
 <label><b>Enter n:</b></label>
+
 <input type="number" id="n" min="1" max="9" value="4">
 
-<button onclick="generateInputs()">Generate Alpha Inputs</button>
+<button onclick="generateInputs()">
+Generate Alpha Inputs
+</button>
 
 <p class="note">
 Enter the values of α(1), α(2), ..., α(n).
 The values will be sorted in ascending order automatically.
+Circular rotations of the same permutation will be placed in one table.
 </p>
 
 <div id="alphaInputs"></div>
 
 <br>
 
-<button onclick="calculate()">Generate All Arrangements</button>
+<button onclick="calculate()">
+Generate Circular Tables
+</button>
 
 <div class="result" id="results"></div>
 
@@ -133,10 +151,13 @@ The values will be sorted in ascending order automatically.
 <script>
 
 function generateInputs() {
+
     const n = parseInt(document.getElementById("n").value);
+
     const container = document.getElementById("alphaInputs");
 
     container.innerHTML = "";
+
     document.getElementById("results").innerHTML = "";
 
     if (!Number.isInteger(n) || n < 1 || n > 9) {
@@ -145,19 +166,26 @@ function generateInputs() {
     }
 
     for (let c = 1; c <= n; c++) {
+
         const div = document.createElement("div");
+
         div.className = "alpha-input";
 
         div.innerHTML = `
             <label>α(${c}) = </label>
-            <input type="number" step="any" id="alpha${c}" value="${c}">
+            <input type="number"
+                   step="any"
+                   id="alpha${c}"
+                   value="${c}">
         `;
 
         container.appendChild(div);
     }
 }
 
+
 function calculate() {
+
     const n = parseInt(document.getElementById("n").value);
 
     if (!Number.isInteger(n) || n < 1 || n > 9) {
@@ -167,7 +195,10 @@ function calculate() {
 
     let alpha = [];
 
+    // Read alpha values
+
     for (let c = 1; c <= n; c++) {
+
         const input = document.getElementById("alpha" + c);
 
         if (!input || input.value === "") {
@@ -186,18 +217,25 @@ function calculate() {
     }
 
     // Sort alpha values in ascending order
+
     alpha.sort((a, b) => a - b);
 
+
     // Generate all permutations
+
     let permutations = [];
 
     function permute(arr, start) {
+
         if (start === arr.length) {
+
             permutations.push([...arr]);
+
             return;
         }
 
         for (let i = start; i < arr.length; i++) {
+
             [arr[start], arr[i]] = [arr[i], arr[start]];
 
             permute(arr, start + 1);
@@ -208,133 +246,276 @@ function calculate() {
 
     permute([...Array(n).keys()], 0);
 
+
     // Preserve original lexicographic permutation order
+
     permutations.sort((a, b) => {
+
         for (let i = 0; i < n; i++) {
+
             if (a[i] !== b[i]) {
                 return a[i] - b[i];
             }
         }
+
         return 0;
     });
 
-    let html = `
-        <h3>Total Arrangements: ${permutations.length} (${n}!)</h3>
 
-        <p><b>Sorted Alpha Values:</b>
-        ${alpha.map((v, i) => `α(${i + 1}) = ${v}`).join(", ")}
-        </p>
+    // Group circularly equivalent permutations
 
-        <table>
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>Permutation</th>
-                    <th>Expression</th>
-                    <th>Calculated Value A(r)</th>
-                    <th>Remainder A(r) ÷ n</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+    let groups = [];
 
-    // Initialize complex summation
-    let realSum = 0;
-    let imaginarySum = 0;
+    let visited = new Set();
 
-    permutations.forEach((p, index) => {
-        let expression = [];
-        let sum = 0;
+    for (const p of permutations) {
 
-        for (let c = 0; c < n; c++) {
-            let coefficient = c + 1;
-            let value = alpha[p[c]];
+        const key = p.join(",");
 
-            sum += coefficient * value;
-
-            if (coefficient === 1) {
-                expression.push(`α(${p[c] + 1})`);
-            } else {
-                expression.push(`${coefficient}α(${p[c] + 1})`);
-            }
+        if (visited.has(key)) {
+            continue;
         }
 
-        // Calculate non-negative remainder
-        let remainder = ((sum % n) + n) % n;
+        let group = [];
 
-        // Calculate exponential:
-        // e^(i 2π remainder / n)
-        let angle = (2 * Math.PI * remainder) / n;
+        // Generate all n cyclic rotations
 
-        let realPart = Math.cos(angle);
-        let imaginaryPart = Math.sin(angle);
+        for (let shift = 0; shift < n; shift++) {
 
-        realSum += realPart;
-        imaginarySum += imaginaryPart;
+            let rotated = [];
 
-        html += `
-            <tr>
-                <td>A(${index + 1})</td>
-                <td>${p.map(x => x + 1).join("")}</td>
-                <td class="expression">
-                    ${expression.join(" + ")}
-                </td>
-                <td>${sum}</td>
-                <td>${remainder}</td>
-            </tr>
-        `;
-    });
+            for (let i = 0; i < n; i++) {
 
-    html += `
-            </tbody>
-        </table>
+                rotated.push(p[(i + shift) % n]);
+            }
+
+            group.push(rotated);
+
+            visited.add(rotated.join(","));
+        }
+
+        groups.push(group);
+    }
+
+
+    // Initialize final complex summation
+
+    let realSum = 0;
+
+    let imaginarySum = 0;
+
+
+    // Header information
+
+    let html = `
+        <h3>
+            Total Permutations: ${factorial(n)}
+        </h3>
+
+        <h3>
+            Total Circular Tables: ${factorial(n - 1)}
+        </h3>
+
+        <p>
+            <b>Rows per table:</b> ${n} data rows + 1 heading row
+        </p>
+
+        <p>
+            <b>Sorted Alpha Values:</b>
+            ${alpha.map((v, i) => `α(${i + 1}) = ${v}`).join(", ")}
+        </p>
     `;
 
-    // Remove tiny floating-point errors
+
+    // Generate each circular table
+
+    groups.forEach((group, tableIndex) => {
+
+        html += `
+            <div class="table-container">
+
+            <div class="table-title">
+                Table ${tableIndex + 1}
+            </div>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Permutation</th>
+                        <th>Expression</th>
+                        <th>Calculated Value A(r)</th>
+                        <th>Remainder A(r) ÷ n</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+        `;
+
+
+        // Each group contains exactly n cyclic rotations
+
+        group.forEach((p, rowIndex) => {
+
+            let expression = [];
+
+            let sum = 0;
+
+            for (let c = 0; c < n; c++) {
+
+                let coefficient = c + 1;
+
+                let value = alpha[p[c]];
+
+                sum += coefficient * value;
+
+                if (coefficient === 1) {
+
+                    expression.push(`α(${p[c] + 1})`);
+
+                } else {
+
+                    expression.push(
+                        `${coefficient}α(${p[c] + 1})`
+                    );
+                }
+            }
+
+
+            // Calculate non-negative remainder
+
+            let remainder = ((sum % n) + n) % n;
+
+
+            // Calculate complex exponential
+
+            let angle = (2 * Math.PI * remainder) / n;
+
+            let realPart = Math.cos(angle);
+
+            let imaginaryPart = Math.sin(angle);
+
+
+            // Accumulate the final summation
+
+            realSum += realPart;
+
+            imaginarySum += imaginaryPart;
+
+
+            // Display data row
+
+            html += `
+                <tr>
+
+                    <td>
+                        A(${tableIndex * n + rowIndex + 1})
+                    </td>
+
+                    <td>
+                        ${p.map(x => x + 1).join("")}
+                    </td>
+
+                    <td class="expression">
+                        ${expression.join(" + ")}
+                    </td>
+
+                    <td>
+                        ${sum}
+                    </td>
+
+                    <td>
+                        ${remainder}
+                    </td>
+
+                </tr>
+            `;
+
+        });
+
+
+        html += `
+                </tbody>
+
+            </table>
+
+            </div>
+        `;
+
+    });
+
+
+    // Clean numerical errors
+
     function cleanNumber(value) {
+
         if (Math.abs(value) < 1e-10) {
             return 0;
         }
+
         return Number(value.toFixed(10));
     }
 
     realSum = cleanNumber(realSum);
+
     imaginarySum = cleanNumber(imaginarySum);
 
+
     // Display final complex summation
+
     html += `
         <div class="sum-box">
 
             <h3>Final Complex Summation</h3>
 
             <p>
-            <b>
-            S<sub>n</sub> =
-            Σ<sub>r=1</sub><sup>n!</sup>
-            e<sup>
-            i2π remainder(A(r) ÷ n)/n
-            </sup>
-            </b>
+                <b>
+                S<sub>n</sub> =
+                Σ<sub>r=1</sub><sup>n!</sup>
+                e<sup>
+                i2π remainder(A(r) ÷ n)/n
+                </sup>
+                </b>
             </p>
 
             <p>
-            <b>Rectangular Form:</b>
+                <b>Rectangular Form:</b>
             </p>
 
             <p>
-            S<sub>n</sub> =
-            ${realSum}
-            ${imaginarySum >= 0 ? "+" : "-"}
-            ${Math.abs(imaginarySum)}i
+                S<sub>n</sub> =
+                ${realSum}
+                ${imaginarySum >= 0 ? "+" : "-"}
+                ${Math.abs(imaginarySum)}i
             </p>
 
         </div>
     `;
 
+
     document.getElementById("results").innerHTML = html;
+
 }
 
+
+// Factorial function
+
+function factorial(num) {
+
+    let result = 1;
+
+    for (let i = 1; i <= num; i++) {
+
+        result *= i;
+    }
+
+    return result;
+}
+
+
 // Generate default inputs for n = 4
+
 generateInputs();
 
 </script>
