@@ -5,18 +5,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Circular Arrangements</title>
+<title>Circular Arrangements by Remainder</title>
 
 <style>
     body {
         font-family: Arial, sans-serif;
-        margin: 20px;
+        margin: 15px;
         background: #f4f6f9;
         color: #222;
-    }
-
-    h1, h2 {
-        text-align: center;
     }
 
     .container {
@@ -26,6 +22,10 @@
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 2px 8px #ccc;
+    }
+
+    h1, h2 {
+        text-align: center;
     }
 
     input {
@@ -78,20 +78,19 @@
 
     .table-container {
         overflow-x: auto;
-        margin-top: 20px;
+        margin: 20px 0;
     }
 
     table {
         border-collapse: collapse;
         width: 100%;
-        min-width: 500px;
+        min-width: 350px;
     }
 
     th, td {
         border: 1px solid #888;
         padding: 10px;
         text-align: center;
-        white-space: nowrap;
     }
 
     th {
@@ -103,10 +102,18 @@
         background: #f2f2f2;
     }
 
-    .formula {
+    .remainder-heading {
         text-align: center;
-        font-size: 18px;
-        margin: 15px;
+        margin-top: 30px;
+        padding: 10px;
+        background: #e6edff;
+        border-radius: 6px;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #777;
+        padding: 10px;
     }
 </style>
 </head>
@@ -117,16 +124,20 @@
 
     <h1>Circular Arrangements</h1>
 
-    <div class="formula">
-        <p>Σ θ<sub>k</sub> = n</p>
-        <p>0 ≤ θ<sub>k</sub> ≤ n</p>
+    <div class="message">
+        Σ θ<sub>c</sub> = n
     </div>
 
     <h2>Step 1: Enter n</h2>
 
     <div style="text-align:center;">
         <label for="nValue">Value of n:</label>
-        <input type="number" id="nValue" min="1" max="9" value="3">
+
+        <input type="number"
+               id="nValue"
+               min="1"
+               max="9"
+               value="3">
 
         <button onclick="createDegreeInputs()">
             Create Degree Inputs
@@ -145,16 +156,11 @@
         </button>
     </div>
 
-    <h2>Step 3: Result</h2>
+    <h2>Step 3: Results</h2>
 
     <div class="message" id="resultMessage"></div>
 
-    <div class="table-container">
-        <table id="resultTable">
-            <thead></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+    <div id="tablesContainer"></div>
 
 </div>
 
@@ -162,7 +168,8 @@
 
 let n = 3;
 
-// Create inputs for θ1, θ2, ..., θn
+
+// Create degree inputs
 function createDegreeInputs() {
 
     n = Number(document.getElementById("nValue").value);
@@ -176,14 +183,15 @@ function createDegreeInputs() {
 
     container.innerHTML = "";
 
-    for (let k = 1; k <= n; k++) {
+    for (let c = 1; c <= n; c++) {
 
         const box = document.createElement("div");
+
         box.className = "degree-box";
 
         const label = document.createElement("label");
 
-        label.innerHTML = "θ<sub>" + k + "</sub>";
+        label.innerHTML = "θ<sub>" + c + "</sub>";
 
         const input = document.createElement("input");
 
@@ -191,7 +199,7 @@ function createDegreeInputs() {
         input.min = "0";
         input.max = n;
         input.value = "0";
-        input.id = "theta" + k;
+        input.id = "theta" + c;
 
         input.addEventListener("input", updateDegreeSum);
 
@@ -205,19 +213,18 @@ function createDegreeInputs() {
 
     document.getElementById("resultMessage").innerHTML = "";
 
-    document.querySelector("#resultTable thead").innerHTML = "";
-    document.querySelector("#resultTable tbody").innerHTML = "";
+    document.getElementById("tablesContainer").innerHTML = "";
 }
 
 
-// Calculate the sum of degrees
+// Calculate sum of degrees
 function updateDegreeSum() {
 
     let sum = 0;
 
-    for (let k = 1; k <= n; k++) {
+    for (let c = 1; c <= n; c++) {
 
-        const input = document.getElementById("theta" + k);
+        const input = document.getElementById("theta" + c);
 
         if (input) {
             sum += Number(input.value);
@@ -225,11 +232,12 @@ function updateDegreeSum() {
     }
 
     document.getElementById("degreeSum").innerHTML =
-        "Σ θ<sub>k</sub> = " + sum + " (Required: " + n + ")";
+        "Σ θ<sub>c</sub> = " + sum +
+        " (Required: " + n + ")";
 }
 
 
-// Compare two arrangements lexicographically
+// Lexicographical comparison
 function compareArrays(a, b) {
 
     for (let i = 0; i < a.length; i++) {
@@ -243,8 +251,7 @@ function compareArrays(a, b) {
 }
 
 
-// Check whether an arrangement is the smallest
-// among all its rotations
+// Check whether arrangement is the smallest among rotations
 function isCanonical(arr) {
 
     const len = arr.length;
@@ -267,13 +274,32 @@ function isCanonical(arr) {
 }
 
 
-// Generate all distinct circular arrangements
+// Calculate remainder
+function calculateRemainder(arr) {
+
+    let sum = 0;
+
+    for (let k = 0; k < n; k++) {
+
+        // Position is k+1
+        // Symbol subscript is arr[k]
+
+        sum += (k + 1) * arr[k];
+    }
+
+    return sum % n;
+}
+
+
+// Generate arrangements
 function generateArrangements() {
 
     n = Number(document.getElementById("nValue").value);
 
     if (!Number.isInteger(n) || n < 1 || n > 9) {
+
         alert("Please enter an integer n between 1 and 9.");
+
         return;
     }
 
@@ -281,12 +307,14 @@ function generateArrangements() {
 
     let sum = 0;
 
-    for (let k = 1; k <= n; k++) {
+    for (let c = 1; c <= n; c++) {
 
-        const input = document.getElementById("theta" + k);
+        const input = document.getElementById("theta" + c);
 
         if (!input) {
+
             alert("Please create the degree inputs first.");
+
             return;
         }
 
@@ -295,6 +323,7 @@ function generateArrangements() {
         if (!Number.isInteger(value) || value < 0 || value > n) {
 
             alert("Each degree must be a whole number between 0 and n.");
+
             return;
         }
 
@@ -305,113 +334,182 @@ function generateArrangements() {
 
     if (sum !== n) {
 
-        alert("The sum of all degrees must be equal to n.");
+        alert("The sum of all degrees must equal n.");
 
         return;
     }
 
-    const arrangements = [];
+    // Create n groups for remainders 0 to n-1
+    const groups = Array.from(
+        { length: n },
+        () => []
+    );
 
     const current = [];
 
-    // Recursive generation of multiset permutations
+    // Recursive multiset permutation generation
     function generate(position) {
 
         if (position === n) {
 
             if (isCanonical(current)) {
 
-                arrangements.push([...current]);
+                const arrangement = [...current];
+
+                const remainder =
+                    calculateRemainder(arrangement);
+
+                groups[remainder].push(arrangement);
             }
 
             return;
         }
 
-        for (let k = 0; k < n; k++) {
+        for (let c = 0; c < n; c++) {
 
-            if (degrees[k] > 0) {
+            if (degrees[c] > 0) {
 
-                degrees[k]--;
+                degrees[c]--;
 
-                current.push(k + 1);
+                current.push(c + 1);
 
                 generate(position + 1);
 
                 current.pop();
 
-                degrees[k]++;
+                degrees[c]++;
             }
         }
     }
 
     generate(0);
 
-    displayTable(arrangements);
-
+    displayTables(groups);
 }
 
 
-// Display the arrangements in a table
-function displayTable(arrangements) {
+// Display n separate tables
+function displayTables(groups) {
 
-    const tableHead = document.querySelector("#resultTable thead");
+    const container =
+        document.getElementById("tablesContainer");
 
-    const tableBody = document.querySelector("#resultTable tbody");
+    container.innerHTML = "";
 
-    tableHead.innerHTML = "";
+    let total = 0;
 
-    tableBody.innerHTML = "";
+    for (let r = 0; r < n; r++) {
 
-    // Table heading
-    const headerRow = document.createElement("tr");
+        total += groups[r].length;
 
-    const serialHeader = document.createElement("th");
+        const heading = document.createElement("h2");
 
-    serialHeader.textContent = "No.";
+        heading.className = "remainder-heading";
 
-    headerRow.appendChild(serialHeader);
+        heading.innerHTML =
+            "Table " + (r + 1) +
+            " : Remainder = " + r;
 
-    for (let k = 1; k <= n; k++) {
+        container.appendChild(heading);
 
-        const th = document.createElement("th");
+        const tableContainer =
+            document.createElement("div");
 
-        th.innerHTML = "α<sub>c</sub>";
+        tableContainer.className = "table-container";
 
-        headerRow.appendChild(th);
-    }
+        const table = document.createElement("table");
 
-    tableHead.appendChild(headerRow);
+        // Table heading
+        const thead = document.createElement("thead");
 
-    // Table data
-    arrangements.forEach((arr, index) => {
+        const headerRow = document.createElement("tr");
 
-        const row = document.createElement("tr");
+        const th1 = document.createElement("th");
 
-        const serialCell = document.createElement("td");
+        th1.textContent = "No.";
 
-        serialCell.textContent = index + 1;
+        const th2 = document.createElement("th");
 
-        row.appendChild(serialCell);
+        th2.textContent = "Circular Arrangement";
 
-        arr.forEach(value => {
+        const th3 = document.createElement("th");
+
+        th3.textContent = "Remainder";
+
+        headerRow.appendChild(th1);
+        headerRow.appendChild(th2);
+        headerRow.appendChild(th3);
+
+        thead.appendChild(headerRow);
+
+        table.appendChild(thead);
+
+        // Table body
+        const tbody = document.createElement("tbody");
+
+        if (groups[r].length === 0) {
+
+            const row = document.createElement("tr");
 
             const cell = document.createElement("td");
 
-            cell.innerHTML = "α<sub>" + value + "</sub>";
+            cell.colSpan = 3;
+
+            cell.className = "empty-message";
+
+            cell.textContent = "No arrangements";
 
             row.appendChild(cell);
+
+            tbody.appendChild(row);
+        }
+
+        groups[r].forEach((arr, index) => {
+
+            const row = document.createElement("tr");
+
+            // Serial number
+            const serialCell = document.createElement("td");
+
+            serialCell.textContent = index + 1;
+
+            // Arrangement in one column
+            const arrangementCell = document.createElement("td");
+
+            const symbols = arr.map(value =>
+                "α" + value
+            );
+
+            arrangementCell.textContent =
+                "[ " + symbols.join(" , ") + " ]";
+
+            // Remainder
+            const remainderCell = document.createElement("td");
+
+            remainderCell.textContent = r;
+
+            row.appendChild(serialCell);
+
+            row.appendChild(arrangementCell);
+
+            row.appendChild(remainderCell);
+
+            tbody.appendChild(row);
         });
 
-        tableBody.appendChild(row);
-    });
+        table.appendChild(tbody);
+
+        tableContainer.appendChild(table);
+
+        container.appendChild(tableContainer);
+    }
 
     document.getElementById("resultMessage").innerHTML =
-        "Total distinct circular arrangements = " +
-        arrangements.length;
+        "Total distinct circular arrangements = " + total;
 }
 
 
-// Initialize with n = 3
+// Initialize
 createDegreeInputs();
 
 </script>
