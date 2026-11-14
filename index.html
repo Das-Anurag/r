@@ -393,14 +393,466 @@ function displayTables(groups) {
 
     const container =
         document.getElementById("tablesContainer");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Circular Arrangements</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 15px;
+        background: #f4f6f9;
+        color: #222;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px #ccc;
+    }
+
+    h1, h2 {
+        text-align: center;
+    }
+
+    input {
+        width: 70px;
+        padding: 8px;
+        margin: 5px;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 10px 16px;
+        margin: 10px 5px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background: #007bff;
+        color: white;
+    }
+
+    button:hover {
+        background: #0056b3;
+    }
+
+    .degree-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .degree-box {
+        text-align: center;
+        padding: 10px;
+        background: #eef3ff;
+        border-radius: 8px;
+    }
+
+    .degree-box label {
+        display: block;
+        font-weight: bold;
+    }
+
+    .message {
+        text-align: center;
+        font-weight: bold;
+        margin: 15px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        margin: 20px 0;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 350px;
+    }
+
+    th, td {
+        border: 1px solid #888;
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background: #007bff;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background: #f2f2f2;
+    }
+
+    .remainder-heading {
+        text-align: center;
+        margin-top: 30px;
+        padding: 10px;
+        background: #e6edff;
+        border-radius: 6px;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #777;
+        padding: 10px;
+    }
+
+    .statistics {
+        margin-top: 30px;
+        padding: 20px;
+        background: #eef3ff;
+        border-radius: 10px;
+    }
+
+    .statistics p {
+        font-size: 18px;
+        text-align: center;
+        margin: 15px 0;
+        overflow-wrap: anywhere;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Circular Arrangements</h1>
+
+    <h2>Enter n</h2>
+
+    <div style="text-align:center;">
+        <label for="nValue">Value of n:</label>
+
+        <input type="number"
+               id="nValue"
+               min="1"
+               max="9"
+               value="3">
+
+        <button onclick="createDegreeInputs()">
+            Create Degree Inputs
+        </button>
+    </div>
+
+    <h2>Degrees</h2>
+
+    <div id="degreeInputs" class="degree-inputs"></div>
+
+    <div class="message" id="degreeSum"></div>
+
+    <div style="text-align:center;">
+        <button onclick="generateArrangements()">
+            Generate Circular Arrangements
+        </button>
+    </div>
+
+    <h2>Results</h2>
+
+    <div class="message" id="resultMessage"></div>
+
+    <div id="tablesContainer"></div>
+
+    <div class="statistics" id="statistics" style="display:none;">
+
+        <h2>Final Results</h2>
+
+        <p>
+            Number of possible circular arrangements:
+            <strong id="circularCount"></strong>
+        </p>
+
+        <p>
+            Number of possible linear arrangements:
+            <strong id="linearCount"></strong>
+        </p>
+
+        <p>
+            Number of possible linear arrangements /
+            Number of possible circular arrangements =
+            <strong id="ratioCount"></strong>
+        </p>
+
+    </div>
+
+</div>
+
+<script>
+
+let n = 3;
+
+
+// Create degree inputs
+function createDegreeInputs() {
+
+    n = Number(document.getElementById("nValue").value);
+
+    if (!Number.isInteger(n) || n < 1 || n > 9) {
+        alert("Please enter an integer n between 1 and 9.");
+        return;
+    }
+
+    const container = document.getElementById("degreeInputs");
 
     container.innerHTML = "";
 
-    let total = 0;
+    for (let c = 1; c <= n; c++) {
+
+        const box = document.createElement("div");
+
+        box.className = "degree-box";
+
+        const label = document.createElement("label");
+
+        label.innerHTML = "θ<sub>" + c + "</sub>";
+
+        const input = document.createElement("input");
+
+        input.type = "number";
+        input.min = "0";
+        input.max = n;
+        input.value = "0";
+        input.id = "theta" + c;
+
+        input.addEventListener("input", updateDegreeSum);
+
+        box.appendChild(label);
+
+        box.appendChild(input);
+
+        container.appendChild(box);
+    }
+
+    updateDegreeSum();
+
+    document.getElementById("resultMessage").innerHTML = "";
+
+    document.getElementById("tablesContainer").innerHTML = "";
+
+    document.getElementById("statistics").style.display = "none";
+}
+
+
+// Calculate sum of degrees
+function updateDegreeSum() {
+
+    let sum = 0;
+
+    for (let c = 1; c <= n; c++) {
+
+        const input = document.getElementById("theta" + c);
+
+        if (input) {
+            sum += Number(input.value);
+        }
+    }
+
+    document.getElementById("degreeSum").innerHTML =
+        "Σ θ<sub>c</sub> = " + sum +
+        " (Required: " + n + ")";
+}
+
+
+// Lexicographical comparison
+function compareArrays(a, b) {
+
+    for (let i = 0; i < a.length; i++) {
+
+        if (a[i] < b[i]) return -1;
+
+        if (a[i] > b[i]) return 1;
+    }
+
+    return 0;
+}
+
+
+// Check whether arrangement is smallest among rotations
+function isCanonical(arr) {
+
+    const len = arr.length;
+
+    for (let shift = 1; shift < len; shift++) {
+
+        const rotated = [];
+
+        for (let i = 0; i < len; i++) {
+
+            rotated.push(arr[(i + shift) % len]);
+        }
+
+        if (compareArrays(rotated, arr) < 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+// Calculate remainder
+function calculateRemainder(arr) {
+
+    let sum = 0;
+
+    for (let k = 0; k < n; k++) {
+
+        sum += (k + 1) * arr[k];
+    }
+
+    return sum % n;
+}
+
+
+// Factorial function
+function factorial(num) {
+
+    let result = 1;
+
+    for (let i = 2; i <= num; i++) {
+
+        result *= i;
+    }
+
+    return result;
+}
+
+
+// Calculate number of linear arrangements
+function calculateLinearCount(degrees) {
+
+    let denominator = 1;
+
+    for (let c = 0; c < degrees.length; c++) {
+
+        denominator *= factorial(degrees[c]);
+    }
+
+    return factorial(n) / denominator;
+}
+
+
+// Generate arrangements
+function generateArrangements() {
+
+    n = Number(document.getElementById("nValue").value);
+
+    if (!Number.isInteger(n) || n < 1 || n > 9) {
+
+        alert("Please enter an integer n between 1 and 9.");
+
+        return;
+    }
+
+    const degrees = [];
+
+    let sum = 0;
+
+    for (let c = 1; c <= n; c++) {
+
+        const input = document.getElementById("theta" + c);
+
+        if (!input) {
+
+            alert("Please create the degree inputs first.");
+
+            return;
+        }
+
+        const value = Number(input.value);
+
+        if (!Number.isInteger(value) || value < 0 || value > n) {
+
+            alert("Each degree must be a whole number between 0 and n.");
+
+            return;
+        }
+
+        degrees.push(value);
+
+        sum += value;
+    }
+
+    if (sum !== n) {
+
+        alert("The sum of all degrees must equal n.");
+
+        return;
+    }
+
+    const groups = Array.from(
+        { length: n },
+        () => []
+    );
+
+    const current = [];
+
+    function generate(position) {
+
+        if (position === n) {
+
+            if (isCanonical(current)) {
+
+                const arrangement = [...current];
+
+                const remainder =
+                    calculateRemainder(arrangement);
+
+                groups[remainder].push(arrangement);
+            }
+
+            return;
+        }
+
+        for (let c = 0; c < n; c++) {
+
+            if (degrees[c] > 0) {
+
+                degrees[c]--;
+
+                current.push(c + 1);
+
+                generate(position + 1);
+
+                current.pop();
+
+                degrees[c]++;
+            }
+        }
+    }
+
+    generate(0);
+
+    displayTables(groups, degrees);
+}
+
+
+// Display tables and final statistics
+function displayTables(groups, degrees) {
+
+    const container =
+        document.getElementById("tablesContainer");
+
+    container.innerHTML = "";
+
+    let totalCircular = 0;
 
     for (let r = 0; r < n; r++) {
 
-        total += groups[r].length;
+        totalCircular += groups[r].length;
 
         const heading = document.createElement("h2");
 
@@ -419,7 +871,6 @@ function displayTables(groups) {
 
         const table = document.createElement("table");
 
-        // Table heading
         const thead = document.createElement("thead");
 
         const headerRow = document.createElement("tr");
@@ -437,14 +888,15 @@ function displayTables(groups) {
         th3.textContent = "Remainder";
 
         headerRow.appendChild(th1);
+
         headerRow.appendChild(th2);
+
         headerRow.appendChild(th3);
 
         thead.appendChild(headerRow);
 
         table.appendChild(thead);
 
-        // Table body
         const tbody = document.createElement("tbody");
 
         if (groups[r].length === 0) {
@@ -468,12 +920,10 @@ function displayTables(groups) {
 
             const row = document.createElement("tr");
 
-            // Serial number
             const serialCell = document.createElement("td");
 
             serialCell.textContent = index + 1;
 
-            // Arrangement in one column
             const arrangementCell = document.createElement("td");
 
             const symbols = arr.map(value =>
@@ -483,7 +933,6 @@ function displayTables(groups) {
             arrangementCell.textContent =
                 "[ " + symbols.join(" , ") + " ]";
 
-            // Remainder
             const remainderCell = document.createElement("td");
 
             remainderCell.textContent = r;
@@ -504,8 +953,29 @@ function displayTables(groups) {
         container.appendChild(tableContainer);
     }
 
+    // Calculate linear arrangements
+    const totalLinear = calculateLinearCount(degrees);
+
+    // Calculate ratio
+    const ratio = totalCircular > 0
+        ? totalLinear / totalCircular
+        : 0;
+
+    // Display statistics
+    document.getElementById("circularCount").textContent =
+        totalCircular;
+
+    document.getElementById("linearCount").textContent =
+        totalLinear;
+
+    document.getElementById("ratioCount").textContent =
+        Number(ratio.toFixed(10)).toString();
+
+    document.getElementById("statistics").style.display = "block";
+
     document.getElementById("resultMessage").innerHTML =
-        "Total distinct circular arrangements = " + total;
+        "Total distinct circular arrangements = " +
+        totalCircular;
 }
 
 
