@@ -201,6 +201,7 @@ function generatePermutations(arr) {
 
 
 // Calculate
+
 function calculate() {
 
     const n = parseInt(document.getElementById("n").value);
@@ -231,35 +232,47 @@ function calculate() {
         alpha.push(value);
     }
 
-
     // Sort alpha values in ascending order
     alpha.sort((a, b) => a - b);
 
 
-    // Generate tables
-    let tables = [];
+    // Generate permutations
+    function generatePermutations(arr) {
+
+        let permutations = [];
+
+        function permute(current, remaining) {
+
+            if (remaining.length === 0) {
+                permutations.push([...current]);
+                return;
+            }
+
+            for (let i = 0; i < remaining.length; i++) {
+
+                let next = remaining[i];
+
+                let newRemaining =
+                    remaining.filter((_, index) => index !== i);
+
+                permute([...current, next], newRemaining);
+            }
+        }
+
+        permute([], arr);
+
+        return permutations;
+    }
+
+
+    // Generate cyclic arrangements
+    let arrangements = [];
 
     if (n === 1) {
 
-        // Special case n = 1
-        tables = [[[0]]];
+        arrangements = [[0]];
 
     } else {
-
-        /*
-        Table construction:
-
-        Number of tables = (n-2)!
-
-        Each table contains (n-1) data rows.
-
-        The first digit remains fixed as 1.
-
-        The remaining cyclic sequence starts with 2,
-        followed by a permutation of 3, 4, ..., n.
-
-        Each cyclic rotation forms one data row.
-        */
 
         let remainingDigits = [];
 
@@ -267,72 +280,132 @@ function calculate() {
             remainingDigits.push(digit);
         }
 
-        let tailPermutations = generatePermutations(remainingDigits);
+        let tailPermutations =
+            generatePermutations(remainingDigits);
 
-        // For n = 2, the empty array has one permutation.
         if (n === 2) {
             tailPermutations = [[]];
         }
 
         tailPermutations.forEach(tail => {
 
-            // Base sequence: 2 followed by a permutation of 3,...,n
             let cyclicSequence = [2, ...tail];
 
-            let table = [];
-
-            // Generate all cyclic rotations
             for (let shift = 0; shift < n - 1; shift++) {
 
                 let rotated = cyclicSequence.slice(shift)
                     .concat(cyclicSequence.slice(0, shift));
 
-                // Fix first digit as 1
                 let permutation = [1, ...rotated];
 
-                // Convert digits to zero-based indices
-                let zeroBasedPermutation = permutation.map(x => x - 1);
-
-                table.push(zeroBasedPermutation);
+                arrangements.push(
+                    permutation.map(x => x - 1)
+                );
             }
-
-            tables.push(table);
 
         });
 
     }
 
 
+    // Create exactly n tables.
+    // Table 1 -> remainder 0
+    // Table 2 -> remainder 1
+    // ...
+    // Table n -> remainder n-1
+
+    let tables = Array.from({ length: n }, () => []);
+
+
     // Initialize complex summation
     let realSum = 0;
     let imaginarySum = 0;
 
+
+    // Calculate A(r) and group by remainder
+    arrangements.forEach((p, index) => {
+
+        let expression = [];
+        let sum = 0;
+
+        for (let c = 0; c < n; c++) {
+
+            let coefficient = c + 1;
+            let value = alpha[p[c]];
+
+            sum += coefficient * value;
+
+            if (coefficient === 1) {
+
+                expression.push(`α(${p[c] + 1})`);
+
+            } else {
+
+                expression.push(
+                    `${coefficient}α(${p[c] + 1})`
+                );
+
+            }
+        }
+
+
+        // Calculate non-negative remainder
+        let remainder = ((sum % n) + n) % n;
+
+
+        // Group the row into the appropriate table
+        let tableIndex = remainder;
+
+        tables[tableIndex].push({
+
+            number: index + 1,
+
+            permutation: p.map(x => x + 1).join(""),
+
+            expression: expression.join(" + "),
+
+            calculatedValue: sum,
+
+            remainder: remainder
+
+        });
+
+
+        // Calculate exponential
+        let angle = (2 * Math.PI * remainder) / n;
+
+        realSum += Math.cos(angle);
+
+        imaginarySum += Math.sin(angle);
+
+    });
+
+
+    // Display tables
     let html = `
 
-        <h3>Total Tables: ${tables.length} ((n−2)!)</h3>
+        <h3>Total Tables: ${n}</h3>
 
-        <h3>Data Rows per Table: ${n === 1 ? 1 : n - 1}</h3>
-
-        <h3>Total Data Rows: ${tables.reduce((total, table) => total + table.length, 0)}</h3>
+        <h3>Total Data Rows: ${arrangements.length}</h3>
 
         <p>
         <b>Sorted Alpha Values:</b>
-        ${alpha.map((v, i) => `α(${i + 1}) = ${v}`).join(", ")}
+        ${alpha.map((v, i) =>
+            `α(${i + 1}) = ${v}`
+        ).join(", ")}
         </p>
 
     `;
 
 
-    // Global row numbering
-    let globalIndex = 0;
-
-
-    // Display each table
     tables.forEach((table, tableIndex) => {
 
         html += `
 
-            <h3 class="table-title">Table ${tableIndex + 1}</h3>
+            <h3 class="table-title">
+                Table ${tableIndex + 1}
+                (Remainder = ${tableIndex})
+            </h3>
 
             <table>
 
@@ -351,72 +424,23 @@ function calculate() {
         `;
 
 
-        table.forEach((p, rowIndex) => {
+        table.forEach(row => {
 
-            globalIndex++;
-
-            let expression = [];
-            let sum = 0;
-
-
-            // Calculate A(r)
-            for (let c = 0; c < n; c++) {
-
-                let coefficient = c + 1;
-
-                let value = alpha[p[c]];
-
-                sum += coefficient * value;
-
-
-                if (coefficient === 1) {
-
-                    expression.push(`α(${p[c] + 1})`);
-
-                } else {
-
-                    expression.push(`${coefficient}α(${p[c] + 1})`);
-
-                }
-
-            }
-
-
-            // Non-negative remainder
-            let remainder = ((sum % n) + n) % n;
-
-
-            // Exponential:
-            // e^(i 2π remainder(A(r) ÷ n) / n)
-            let angle = (2 * Math.PI * remainder) / n;
-
-            let realPart = Math.cos(angle);
-
-            let imaginaryPart = Math.sin(angle);
-
-
-            // Summation over all generated rows
-            realSum += realPart;
-
-            imaginarySum += imaginaryPart;
-
-
-            // Display row
             html += `
 
                 <tr>
 
-                    <td>A(${globalIndex})</td>
+                    <td>A(${row.number})</td>
 
-                    <td>${p.map(x => x + 1).join("")}</td>
+                    <td>${row.permutation}</td>
 
                     <td class="expression">
-                        ${expression.join(" + ")}
+                        ${row.expression}
                     </td>
 
-                    <td>${sum}</td>
+                    <td>${row.calculatedValue}</td>
 
-                    <td>${remainder}</td>
+                    <td>${row.remainder}</td>
 
                 </tr>
 
