@@ -76,6 +76,12 @@
         margin: 15px;
     }
 
+    .description {
+        text-align: center;
+        font-size: 17px;
+        margin: 10px 0 20px;
+    }
+
     .table-container {
         overflow-x: auto;
         margin: 20px 0;
@@ -84,7 +90,7 @@
     table {
         border-collapse: collapse;
         width: 100%;
-        min-width: 600px;
+        min-width: 650px;
     }
 
     th, td {
@@ -122,27 +128,16 @@
         background: #eef3ff;
         border-radius: 10px;
         line-height: 1.8;
-        overflow-wrap: anywhere;
     }
 
     .summary p {
-        font-size: 17px;
-    }
-
-    .approved {
-        color: #008000;
-        font-size: 24px;
-        font-weight: bold;
-    }
-
-    .failed {
-        color: #cc0000;
-        font-size: 24px;
+        font-size: 18px;
         font-weight: bold;
     }
 
     .math {
-        font-size: 17px;
+        font-family: "Times New Roman", serif;
+        font-size: 18px;
     }
 </style>
 </head>
@@ -170,6 +165,10 @@
     </div>
 
     <h2>Degrees</h2>
+
+    <div class="description">
+        θ<sub>k</sub> is the degree of α<sub>k</sub>.
+    </div>
 
     <div id="degreeInputs" class="degree-inputs"></div>
 
@@ -231,7 +230,6 @@ function createDegreeInputs() {
         input.addEventListener("input", updateDegreeSum);
 
         box.appendChild(label);
-
         box.appendChild(input);
 
         container.appendChild(box);
@@ -247,7 +245,7 @@ function createDegreeInputs() {
 }
 
 
-// Degree sum
+// Calculate degree sum
 function updateDegreeSum() {
 
     let sum = 0;
@@ -281,7 +279,7 @@ function compareArrays(a, b) {
 }
 
 
-// Canonical circular arrangement
+// Check whether arrangement is smallest among rotations
 function isCanonical(arr) {
 
     const len = arr.length;
@@ -318,28 +316,7 @@ function calculateRemainder(arr) {
 }
 
 
-// Count distinct linear representations
-function countLinearRepresentations(arr) {
-
-    const rotations = new Set();
-
-    for (let shift = 0; shift < n; shift++) {
-
-        const rotated = [];
-
-        for (let k = 0; k < n; k++) {
-
-            rotated.push(arr[(k + shift) % n]);
-        }
-
-        rotations.add(rotated.join(","));
-    }
-
-    return rotations.size;
-}
-
-
-// Factorial
+// Calculate factorial
 function factorial(num) {
 
     let result = 1;
@@ -353,7 +330,7 @@ function factorial(num) {
 }
 
 
-// Number of linear arrangements
+// Calculate number of linear arrangements
 function calculateLinearArrangements(degrees) {
 
     let result = factorial(n);
@@ -367,107 +344,25 @@ function calculateLinearArrangements(degrees) {
 }
 
 
-// Complex exponential e^(i*angle)
-function complexExponential(angle) {
+// Count distinct linear sequence representations
+// of one circular arrangement
+function countDistinctRotations(arr) {
 
-    return {
-        real: Math.cos(angle),
-        imag: Math.sin(angle)
-    };
-}
+    const distinct = new Set();
 
+    for (let shift = 0; shift < n; shift++) {
 
-// Actual coefficient of the polynomial monomial
-function calculateActualCoefficient(degrees) {
+        const rotated = [];
 
-    const remaining = [...degrees];
+        for (let k = 0; k < n; k++) {
 
-    const current = [];
-
-    let realSum = 0;
-
-    let imagSum = 0;
-
-    function generate(position) {
-
-        if (position === n) {
-
-            let weightedSum = 0;
-
-            for (let k = 0; k < n; k++) {
-
-                weightedSum += (k + 1) * current[k];
-            }
-
-            const angle = 2 * Math.PI * weightedSum / n;
-
-            const value = complexExponential(angle);
-
-            realSum += value.real;
-
-            imagSum += value.imag;
-
-            return;
+            rotated.push(arr[(k + shift) % n]);
         }
 
-        for (let c = 0; c < n; c++) {
-
-            if (remaining[c] > 0) {
-
-                remaining[c]--;
-
-                current.push(c + 1);
-
-                generate(position + 1);
-
-                current.pop();
-
-                remaining[c]++;
-            }
-        }
+        distinct.add(rotated.join(","));
     }
 
-    generate(0);
-
-    return {
-        real: realSum,
-        imag: imagSum
-    };
-}
-
-
-// Format complex number
-function formatComplex(real, imag) {
-
-    const precision = 6;
-
-    real = Number(real.toFixed(precision));
-
-    imag = Number(imag.toFixed(precision));
-
-    if (real === 0) real = 0;
-
-    if (imag === 0) imag = 0;
-
-    if (imag === 0) {
-        return String(real);
-    }
-
-    if (real === 0) {
-
-        if (imag === 1) return "i";
-
-        if (imag === -1) return "-i";
-
-        return imag + "i";
-    }
-
-    if (imag > 0) {
-
-        return real + " + " + imag + "i";
-    }
-
-    return real + " - " + Math.abs(imag) + "i";
+    return distinct.size;
 }
 
 
@@ -526,6 +421,7 @@ function generateArrangements() {
 
     const current = [];
 
+    // Generate multiset permutations
     function generate(position) {
 
         if (position === n) {
@@ -537,13 +433,13 @@ function generateArrangements() {
                 const remainder =
                     calculateRemainder(arrangement);
 
-                const v =
-                    countLinearRepresentations(arrangement);
+                const linearRepresentations =
+                    countDistinctRotations(arrangement);
 
                 groups[remainder].push({
                     arrangement: arrangement,
                     remainder: remainder,
-                    v: v
+                    linearRepresentations: linearRepresentations
                 });
             }
 
@@ -583,7 +479,11 @@ function displayTables(groups) {
 
     container.innerHTML = "";
 
+    let totalCircular = 0;
+
     for (let t = 0; t < n; t++) {
+
+        totalCircular += groups[t].length;
 
         const heading = document.createElement("h2");
 
@@ -606,29 +506,40 @@ function displayTables(groups) {
 
         const headerRow = document.createElement("tr");
 
+
+        // Column 1: Arrangement name
         const th1 = document.createElement("th");
 
         th1.innerHTML = "Arrangement Name";
 
+
+        // Column 2: Circular arrangement
         const th2 = document.createElement("th");
 
         th2.innerHTML = "Circular Arrangement";
 
+
+        // Column 3: Remainder formula
         const th3 = document.createElement("th");
 
         th3.innerHTML =
-            "R = (Σ<sub>k=1</sub><sup>n</sup> k c<sub>k</sub>) mod n";
+            '<span class="math">' +
+            'Remainder ' +
+            '(&sum;<sub>k=1</sub><sup>n</sup> k c<sub>k</sub>) ' +
+            '&nbsp;mod&nbsp; n' +
+            '</span>';
 
+
+        // Column 4: Number of linear representations
         const th4 = document.createElement("th");
 
-        th4.innerHTML = "v<sub>t,r</sub>";
+        th4.textContent =
+            "Number of Possible Linear Sequence Representations";
+
 
         headerRow.appendChild(th1);
-
         headerRow.appendChild(th2);
-
         headerRow.appendChild(th3);
-
         headerRow.appendChild(th4);
 
         thead.appendChild(headerRow);
@@ -654,37 +565,45 @@ function displayTables(groups) {
             tbody.appendChild(row);
         }
 
+
         groups[t].forEach((item, index) => {
 
             const row = document.createElement("tr");
 
-            const r = index + 1;
 
             // Arrangement name A_(t,r)
             const nameCell = document.createElement("td");
 
             nameCell.innerHTML =
-                "A<sub>" + (t + 1) + "," + r + "</sub>";
+                "<i>A</i><sub>" +
+                (t + 1) + "," +
+                (index + 1) +
+                "</sub>";
 
-            // Circular arrangement
+
+            // Arrangement with proper subscripts
             const arrangementCell = document.createElement("td");
 
             const symbols = item.arrangement.map(value =>
-                "α" + value
+                "α<sub>" + value + "</sub>"
             );
 
-            arrangementCell.textContent =
+            arrangementCell.innerHTML =
                 "[ " + symbols.join(" , ") + " ]";
 
-            // Remainder
+
+            // Remainder value
             const remainderCell = document.createElement("td");
 
             remainderCell.textContent = item.remainder;
 
-            // Number of linear representations
-            const vCell = document.createElement("td");
 
-            vCell.textContent = item.v;
+            // Linear sequence representation count
+            const linearCell = document.createElement("td");
+
+            linearCell.textContent =
+                item.linearRepresentations;
+
 
             row.appendChild(nameCell);
 
@@ -692,10 +611,11 @@ function displayTables(groups) {
 
             row.appendChild(remainderCell);
 
-            row.appendChild(vCell);
+            row.appendChild(linearCell);
 
             tbody.appendChild(row);
         });
+
 
         table.appendChild(tbody);
 
@@ -703,58 +623,29 @@ function displayTables(groups) {
 
         container.appendChild(tableContainer);
     }
+
+    document.getElementById("resultMessage").innerHTML =
+        "Tables generated successfully.";
 }
 
 
-// Display final summary and verification
+// Display final summary
 function displaySummary(groups, degrees) {
 
     let circularCount = 0;
 
-    let sumV = 0;
-
-    let weightedReal = 0;
-
-    let weightedImag = 0;
-
-    // Calculate Σ u_(t,r) * v_(t,r)
     for (let t = 0; t < n; t++) {
 
-        for (let r = 0; r < groups[t].length; r++) {
-
-            const item = groups[t][r];
-
-            circularCount++;
-
-            sumV += item.v;
-
-            const angle =
-                2 * Math.PI * item.remainder / n;
-
-            const u = complexExponential(angle);
-
-            weightedReal += u.real * item.v;
-
-            weightedImag += u.imag * item.v;
-        }
+        circularCount += groups[t].length;
     }
 
-    // Number of linear arrangements
     const linearCount =
         calculateLinearArrangements(degrees);
 
-    // Verification
-    const verified = (sumV === linearCount);
-
-    // Actual coefficient
-    const coefficient =
-        calculateActualCoefficient(degrees);
-
-    const weightedSum =
-        formatComplex(weightedReal, weightedImag);
-
-    const coefficientResult =
-        formatComplex(coefficient.real, coefficient.imag);
+    const ratio =
+        circularCount === 0
+        ? 0
+        : linearCount / circularCount;
 
     const summary =
         document.getElementById("summaryContainer");
@@ -774,38 +665,11 @@ function displaySummary(groups, degrees) {
                 ${linearCount}
             </p>
 
-            <p class="math">
-                Σ u<sub>t,r</sub> v<sub>t,r</sub> =
-                ${weightedSum}
-            </p>
-
             <p>
-                Σ v<sub>t,r</sub> =
-                ${sumV}
+                Number of possible linear arrangements /
+                Number of possible circular arrangements:
+                ${ratio}
             </p>
-
-            <p>
-                Verification:
-                ${sumV} = ${linearCount}
-            </p>
-
-            <p class="${verified ? "approved" : "failed"}">
-                ${verified ? "Approved" : "Something went wrong"}
-            </p>
-
-            ${
-                verified
-                ? `
-                <p class="math">
-                    Coefficient of
-                    ∏<sub>k=1</sub><sup>n</sup>
-                    (α<sub>k</sub>)<sup>θ<sub>k</sub></sup>
-                    in P(n) =
-                    ${coefficientResult}
-                </p>
-                `
-                : ""
-            }
 
         </div>
     `;
